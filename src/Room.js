@@ -1,14 +1,16 @@
-import React, {useEffect} from 'react'
+import React, {useEffect, useRef} from 'react'
 
 const Room = (props) => {
-    let mediaRecorder
+    const mediaRecorder = useRef(null)
+    const ref = useRef(null)
+    const roomId = props.match.params.room
     useEffect(() => {
         // Run! Like go get some data from an API.
         //const socket = props.socket
         //const roomIdProps = props.roomId  
         //let roomId = roomIdProps    
-        //props.setNewRoom(roomId) 
-        props.socket.emit('join', props.roomId)
+        props.setNewRoom(roomId) 
+        props.socket.emit('join', roomId)
 
             //let audioPermission = false       
             navigator
@@ -16,13 +18,13 @@ const Room = (props) => {
               .getUserMedia({audio: true})
               .then(stream => {
                 //audioPermission = true
-                mediaRecorder = new MediaRecorder(stream)
+                mediaRecorder.current = new MediaRecorder(stream)
                 let chunks = []
-                mediaRecorder.ondataavailable = data =>{
+                mediaRecorder.current.ondataavailable = data =>{
                   // data received
                   chunks.push(data.data)
                 }
-                mediaRecorder.onstop = () =>{
+                mediaRecorder.current.onstop = () =>{
                   //data stopped
       
                   const reader = new window.FileReader()
@@ -31,7 +33,7 @@ const Room = (props) => {
                   reader.onloadend = () =>{
                     props.socket.emit('sendAudio', {
                       data: reader.result,
-                      room: props.roomId
+                      room: roomId
                     })
                   }
       
@@ -39,20 +41,21 @@ const Room = (props) => {
                 }
               }, err => {
                 //audioPermission = false
-                mediaRecorder = null
+                mediaRecorder.current = null
               })
-              props.update(''+new Date())
+             // props.update(''+new Date())
         /*this.handleKey = this.handleKey.bind(this)
         this.renderMessage = this.renderMessage.bind(this)
         this.mouseUp = this.mouseUp.bind(this)
         this.mouseDown = this.mouseDown.bind(this)*/
-    }, [props.roomId]);
+
+    },[ref.current || roomId]);
 
     const mouseUp =() =>{
-        mediaRecorder.stop()
+        mediaRecorder.current.stop()
     }
-    const mouseDown = () =>{
-        mediaRecorder.start()
+    const mouseDown = () =>{    
+        mediaRecorder.current.start()
     }
 
     const handleKey = (event) => {
@@ -61,11 +64,12 @@ const Room = (props) => {
         //console.log(event.target.value)
         if (event.keyCode === 13) {
             //enviar a mensagem <enter>
+            ref.current = new Date()
             props.socket.emit('sendMsg', {
                 msg: event.target.value,
-                room: props.roomId
+                room: roomId
             })
-            //this.msg.value = ''
+            event.target.value = ''
         }
     }
 
@@ -87,7 +91,7 @@ const Room = (props) => {
         )
     }
 
-        const room = props.roomId
+        const room = roomId
         const msgs = props.msgs[room]
         return (
             <div className="room">
@@ -98,7 +102,6 @@ const Room = (props) => {
                 </div>
                 <div className="new-message-form w-form">
                     <form className="form">
-                    {JSON.stringify(props.setNewRoom)}
                         <textarea id="field" className="field msg w-input" maxLength="5000" placeholder="Digite sua mensagem e pressione &lt;Enter&gt;" autoFocus onKeyUp={handleKey} /*ref={(ref) => this.msg = ref}*/></textarea>
                         <button type="button" className="send-audio w-button" onMouseDown={mouseDown} onMouseUp={mouseUp}>Enviar<br />Áudio</button>
                     </form>
