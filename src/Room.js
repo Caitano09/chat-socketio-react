@@ -2,13 +2,11 @@ import React, {useEffect, useRef} from 'react'
 
 const Room = (props) => {
     const mediaRecorder = useRef(null)
-    const ref = useRef(null)
+    const updateMessages = useRef(null)
     const roomId = props.match.params.room
+
     useEffect(() => {
-        // Run! Like go get some data from an API.
-        //const socket = props.socket
-        //const roomIdProps = props.roomId  
-        //let roomId = roomIdProps    
+
         props.setNewRoom(roomId) 
         props.socket.emit('join', roomId)
 
@@ -17,7 +15,7 @@ const Room = (props) => {
               .mediaDevices
               .getUserMedia({audio: true})
               .then(stream => {
-                //audioPermission = true
+                ///audioPermission = true
                 mediaRecorder.current = new MediaRecorder(stream)
                 let chunks = []
                 mediaRecorder.current.ondataavailable = data =>{
@@ -43,13 +41,8 @@ const Room = (props) => {
                 //audioPermission = false
                 mediaRecorder.current = null
               })
-             // props.update(''+new Date())
-        /*this.handleKey = this.handleKey.bind(this)
-        this.renderMessage = this.renderMessage.bind(this)
-        this.mouseUp = this.mouseUp.bind(this)
-        this.mouseDown = this.mouseDown.bind(this)*/
-
-    },[ref.current || roomId]);
+    
+    },[updateMessages.current, roomId]);
 
     const mouseUp =() =>{
         mediaRecorder.current.stop()
@@ -59,16 +52,14 @@ const Room = (props) => {
     }
 
     const handleKey = (event) => {
-       // console.log(props.a)
-     
-        //console.log(event.target.value)
+
         if (event.keyCode === 13) {
             //enviar a mensagem <enter>
-            ref.current = new Date()
             props.socket.emit('sendMsg', {
                 msg: event.target.value,
                 room: roomId
             })
+            updateMessages.current = event.target.value+new Date()
             event.target.value = ''
         }
     }
@@ -93,6 +84,7 @@ const Room = (props) => {
 
         const room = roomId
         const msgs = props.msgs[room]
+
         return (
             <div className="room">
                 <div className="messages">
